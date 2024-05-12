@@ -1,20 +1,66 @@
 (function($) {
   'use strict';
+
+  function ajaxRequest(apiName, method, data, callback){
+     var http = new XMLHttpRequest();
+      var url = 'http://127.0.0.1:8001/'+apiName;
+      var payload = data;
+      http.open(method.toUpperCase(), url, false);
+
+      //Send the proper header information along with the requests
+      http.setRequestHeader('Content-type', 'application/json');
+
+      const lableList = []
+      const PATList = []
+      if(method == "post"){
+        http.send(JSON.stringify(payload));
+      }else{
+        http.send(data);
+      }
+
+      //http.onreadystatechange = function() {//Call a function when the state changes.
+
+          if(http.readyState == 4 && http.status == 200) {
+              var res = http.responseText;
+              console.log('Inside function getStatus : '+res);
+              if(callback) callback(res);
+          }else{
+              alert('Error in request, please try again');
+              //return false;
+          }
+      //}
+  }
+
   $(function() {
     if ($("#performaneLine").length) {
       var graphGradient = document.getElementById("performaneLine").getContext('2d');
-      var graphGradient2 = document.getElementById("performaneLine").getContext('2d');
+      //var graphGradient2 = document.getElementById("performaneLine").getContext('2d');
       var saleGradientBg = graphGradient.createLinearGradient(5, 0, 5, 100);
       saleGradientBg.addColorStop(0, 'rgba(26, 115, 232, 0.18)');
       saleGradientBg.addColorStop(1, 'rgba(26, 115, 232, 0.02)');
-      var saleGradientBg2 = graphGradient2.createLinearGradient(100, 0, 50, 150);
-      saleGradientBg2.addColorStop(0, 'rgba(0, 208, 255, 0.19)');
-      saleGradientBg2.addColorStop(1, 'rgba(0, 208, 255, 0.03)');
+      //var saleGradientBg2 = graphGradient2.createLinearGradient(100, 0, 50, 150);
+      //saleGradientBg2.addColorStop(0, 'rgba(0, 208, 255, 0.19)');
+      //saleGradientBg2.addColorStop(1, 'rgba(0, 208, 255, 0.03)');
+
+      const lableList = []
+      const priceList = []
+
+      var payload = {"stockdetails": {"symbol": document.getElementById('stock_symbol').innerHTML}};
+      ajaxRequest('histPrices', 'post', payload , function(response){
+          const res = JSON.parse(response);
+          for (const key in res){
+                var date = res[key]['date'];
+                var price = res[key]['close_price'];
+                lableList.push(date);
+                priceList.push(price);
+          }
+      });
+
       var salesTopData = {
-          labels: ["SUN","sun", "MON", "mon", "TUE","tue", "WED", "wed", "THU", "thu", "FRI", "fri", "SAT"],
+          labels: lableList,
           datasets: [{
-              label: 'This week',
-              data: [50, 110, 60, 290, 200, 115, 130, 170, 90, 210, 240, 280, 200],
+              label: 'Last 2 Months',
+              data: priceList,
               backgroundColor: saleGradientBg,
               borderColor: [
                   '#1F3BB3',
@@ -22,25 +68,11 @@
               borderWidth: 1.5,
               fill: true, // 3: no fill
               pointBorderWidth: 1,
-              pointRadius: [4, 4, 4, 4, 4,4, 4, 4, 4, 4,4, 4, 4],
-              pointHoverRadius: [2, 2, 2, 2, 2,2, 2, 2, 2, 2,2, 2, 2],
+              pointRadius: [],
+              pointHoverRadius: [],
               pointBackgroundColor: ['#1F3BB3)', '#1F3BB3', '#1F3BB3', '#1F3BB3','#1F3BB3)', '#1F3BB3', '#1F3BB3', '#1F3BB3','#1F3BB3)', '#1F3BB3', '#1F3BB3', '#1F3BB3','#1F3BB3)'],
               pointBorderColor: ['#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff',],
-          },{
-            label: 'Last week',
-            data: [30, 150, 190, 250, 120, 150, 130, 20, 30, 15, 40, 95, 180],
-            backgroundColor: saleGradientBg2,
-            borderColor: [
-                '#52CDFF',
-            ],
-            borderWidth: 1.5,
-            fill: true, // 3: no fill
-            pointBorderWidth: 1,
-            pointRadius: [0, 0, 0, 4, 0],
-            pointHoverRadius: [0, 0, 0, 2, 0],
-            pointBackgroundColor: ['#52CDFF)', '#52CDFF', '#52CDFF', '#52CDFF','#52CDFF)', '#52CDFF', '#52CDFF', '#52CDFF','#52CDFF)', '#52CDFF', '#52CDFF', '#52CDFF','#52CDFF)'],
-              pointBorderColor: ['#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff','#fff',],
-        }]
+          }]
       };
   
       var salesTopOptions = {
@@ -53,6 +85,7 @@
                       drawBorder: false,
                       color:"#F0F0F0",
                       zeroLineColor: '#F0F0F0',
+		      stacked: true
                   },
                   ticks: {
                     beginAtZero: false,
@@ -66,13 +99,14 @@
                 gridLines: {
                     display: false,
                     drawBorder: false,
+		    type: 'timeseries'
                 },
                 ticks: {
                   beginAtZero: false,
                   autoSkip: true,
                   maxTicksLimit: 7,
                   fontSize: 10,
-                  color:"#6B778C"
+                  color:"#6B778C",
                 }
             }],
           },
@@ -368,21 +402,28 @@
     }
     if ($("#marketingOverview").length) {
       var marketingOverviewChart = document.getElementById("marketingOverview").getContext('2d');
+
+      const lableList = []
+      const PATList = []
+      const montheNameList = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sept','Oct','Nov','Dec'];
+      var payload = {"resultinfo": {"symbol": document.getElementById('stock_symbol').innerHTML,"result_type": "all"}};
+      ajaxRequest('resultDetails', 'post', payload , function(response){
+          const res = JSON.parse(response);
+          for (const key in res){
+                var fromDate = res[key]['from_date'];
+                var monthName = montheNameList[(new Date(fromDate)).getMonth()];
+                var year = (new Date(fromDate)).getFullYear();
+                var profitAfterTax = res[key]['profit_after_tax'];
+                lableList.push(monthName+"-"+year);
+                PATList.push(profitAfterTax);
+          }
+      });
+
       var marketingOverviewData = {
-          labels: ["JAN","FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+          labels: lableList,
           datasets: [{
-              label: 'Last week',
-              data: [110, 220, 200, 190, 220, 110, 210, 110, 205, 202, 201, 150],
-              backgroundColor: "#52CDFF",
-              borderColor: [
-                  '#52CDFF',
-              ],
-              borderWidth: 0,
-              fill: true, // 3: no fill
-              
-          },{
-            label: 'This week',
-            data: [215, 290, 210, 250, 290, 230, 290, 210, 280, 220, 190, 300],
+            label: 'Quarterly PAT',
+            data: PATList,
             backgroundColor: "#1F3BB3",
             borderColor: [
                 '#1F3BB3',
