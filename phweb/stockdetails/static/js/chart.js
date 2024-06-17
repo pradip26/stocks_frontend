@@ -4,6 +4,39 @@ $(function() {
    * Data and config for chartjs
    */
   'use strict';
+
+  function ajaxRequest(apiName, method, data, callback){
+     var http = new XMLHttpRequest();
+      var url = 'http://127.0.0.1:8001/'+apiName;
+      var payload = data;
+      http.open(method.toUpperCase(), url, false);
+
+      //Send the proper header information along with the requests
+      http.setRequestHeader('Content-type', 'application/json');
+
+      const lableList = []
+      const PATList = []
+      if(method == "post"){
+        http.send(JSON.stringify(payload));
+      }else{
+        http.send(data);
+      }
+
+      //http.onreadystatechange = function() {//Call a function when the state changes.
+
+          if(http.readyState == 4 && http.status == 200) {
+              var res = http.responseText;
+              console.log('Inside function getStatus : '+res);
+              if(callback) callback(res);
+          }else{
+              alert('Error in request, please try again');
+              //return false;
+          }
+      //}
+  }
+
+
+
   var data = {
     labels: ["2013", "2014", "2014", "2015", "2016", "2017"],
     datasets: [{
@@ -69,14 +102,13 @@ $(function() {
       }]
     },
     legend: {
-      display: false
+      display: true
     },
     elements: {
       point: {
         radius: 0
       }
     }
-
   };
   var doughnutPieData = {
     datasets: [{
@@ -279,11 +311,54 @@ $(function() {
   }
 
   if ($("#lineChart").length) {
+
+    const lableList = []
+    const PVlist = []
+    var payload = {};
+    var tooltipItem = []
+      ajaxRequest('getSamplePortfolioWeeklyGraph', 'get', payload , function(response){
+          const res = JSON.parse(response);
+          for (const key in res){
+                var date = res[key]['date'];
+                var gain = (res[key]['gain']).toFixed(2);
+                var pv = (res[key]['current_pf_val']).toFixed(2);
+                lableList.push(date);
+                PVlist.push(gain);
+                tooltipItem.push(pv)
+          }
+      });
+
+    var graphdata = {
+        labels: lableList,
+        datasets: [{
+          label: 'Portfolio',
+          data: PVlist ,
+          backgroundColor: "#EBF0E2",
+          borderColor: "#008631",
+          borderWidth: 1,
+          fill: true,
+          tooltipItem: tooltipItem,
+        }]
+      };
+
+    var tooltipOptions = {
+        tooltips: {
+         callbacks: {
+            label: function(tooltipItem, tooltipItemData) {
+                var tooltip = ["PV : "+ tooltipItemData.datasets[0]['tooltipItem'][tooltipItem['index']]];
+                tooltip.push("Gain : "+ tooltipItemData.datasets[0]['data'][tooltipItem['index']]);
+                return tooltip;
+            }
+        },
+        mode: 'nearest',
+        intersect: false
+      }
+    }
     var lineChartCanvas = $("#lineChart").get(0).getContext("2d");
     var lineChart = new Chart(lineChartCanvas, {
       type: 'line',
-      data: data,
-      options: options
+      data: graphdata,
+      options: tooltipOptions
     });
   }
 

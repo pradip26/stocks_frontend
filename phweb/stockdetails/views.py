@@ -46,7 +46,15 @@ def index(request,symbol):
     stockScoreData = requests.post(stockScoreapi, headers=headers, json=scorepostData)
     stockScoreDataJson = stockScoreData.json()
 
-    print(stockScoreDataJson)
+    sampleMFapi = APIURL + '/getSamplePortfolio/'
+    sampleModelData = requests.get(sampleMFapi, headers=headers)
+    sampleModelDataJson = sampleModelData.json()
+
+    sampleLatestPFDataapi = APIURL + '/getSampleLatestPortoflioValue/'
+    sampleLastestModelData = requests.get(sampleLatestPFDataapi, headers=headers)
+    sampleLastestModelDataJson = sampleLastestModelData.json()
+
+    print(sampleLastestModelDataJson)
 
     #template = loader.get_template("stockdetails/stockinfo.html")
     #print(response.json())
@@ -55,7 +63,9 @@ def index(request,symbol):
                'corpactions': corpActionDataJson,
                'peers': peersDataJson,
                'topstocks':scoreDataJson,
-               'scoredata':stockScoreDataJson
+               'scoredata':stockScoreDataJson,
+               'sample_mf_data': sampleModelDataJson,
+               'sample_latest_pf_value': sampleLastestModelDataJson
                }
     #print(context)
     #return HttpResponse(template.render(context,request))
